@@ -5,6 +5,7 @@
 // e.g.) ./optimization_test all
 
 #include <algorithm>
+#include <cassert>
 #include <cstdio>
 #include <iostream>
 #include <iomanip>
@@ -101,7 +102,7 @@ void use_loop_blocking_test();
 void use_loop_blocking_test_for_sample_interleaving();
 void cache_thrashing_test();
 void false_sharing_test();
-void fast_abs_test();
+void abs_impl_test();
 
 int main(int argc, char **argv)
 {
@@ -126,8 +127,8 @@ int main(int argc, char **argv)
     if(all || test_case_name == "false_sharing_test") {
         false_sharing_test();
     }
-    if(all || test_case_name == "fast_abs_test") {
-        fast_abs_test();
+    if(all || test_case_name == "abs_impl_test") {
+        abs_impl_test();
     }
 }
 
@@ -534,7 +535,7 @@ int64_t abs_using_if(int64_t x)
 
 int64_t abs_using_bitop(int64_t x)
 {
-    std::uint64_t M = (x >> 31);
+    std::uint64_t M = (x >> 63);
     return (x ^ M) - M;
 };
 
@@ -542,11 +543,14 @@ int64_t abs_using_bitop(int64_t x)
 // しかし実際には、どちらもさほど変わらない。
 // Intelの最近の命令セットには、フラグの状態に合わせてmovを行う命令があるので、条件分岐 + movを1命令で行える。
 // したがって、最適化によってどちらも同じような性能になる
-void fast_abs_test()
+void abs_impl_test()
 {
     std::cout << "-------------------------------------------------------------" << std::endl;
     std::cout << "fast_abs_test" << std::endl;
     std::cout << std::endl;
+
+    assert(abs_using_if(-(0xF1F2F3F4F5LL)) == abs(0xF1F2F3F4F5LL));
+    assert(abs_using_bitop(-(0xF1F2F3F4F5LL)) == abs(0xF1F2F3F4F5LL));
 
     int64_t count = 0;
     {
