@@ -189,7 +189,7 @@ void access_order_test()
 // ループ処理を行う際に、処理単位を分割することでキャッシュ効率を向上させる手法のテスト
 // 行列の積の計算は、行アクセスと列アクセスが混在するので、片方を効率よく処理させようとすると
 // もう片方のアクセス効率が落ちる問題がある。
-// これに対して、積の計算をするときの処理単位を小さく分割することで
+// これに対して、積の計算をするときの処理単位を小さく分割することでそれぞれの効率を下げずに計算できる。
 void use_loop_blocking_test()
 {
     std::cout << "-------------------------------------------------------------" << std::endl;
@@ -208,25 +208,6 @@ void use_loop_blocking_test()
             a[i][j] = i + j;
             b[i][j] = i + j + 2;
         }
-    }
-
-    std::cout << "Don't use loop blocking" << std::endl;
-    {
-        Timer t;
-        for(int i = 0; i < kSize; ++i) {
-            for(int j = 0; j < kSize; ++j) {
-                c[i][j] = 0;
-            }
-        }
-
-        for (int i = 0; i < kSize; i++) {
-            for (int j = 0; j < kSize; j++) {
-                for (int k = 0; k < kSize; ++k) {
-                    c[i][j] += a[i][k] * b[k][j];
-                }
-            }
-        }
-        dump(t.elapsed());
     }
 
     std::cout << "Use loop blocking" << std::endl;
@@ -280,6 +261,25 @@ void use_loop_blocking_test()
         std::cout << "fastest block size: " << fastest_block_size << std::endl;
         dump(fastest_block_time);
     }
+
+    std::cout << "Don't use loop blocking" << std::endl;
+    {
+        Timer t;
+        for(int i = 0; i < kSize; ++i) {
+            for(int j = 0; j < kSize; ++j) {
+                c[i][j] = 0;
+            }
+        }
+
+        for (int i = 0; i < kSize; i++) {
+            for (int j = 0; j < kSize; j++) {
+                for (int k = 0; k < kSize; ++k) {
+                    c[i][j] += a[i][k] * b[k][j];
+                }
+            }
+        }
+        dump(t.elapsed());
+    }
 }
 
 // wavファイルのデータ形式のように、1サンプルデータをチャンネル数で並べ、それをサンプル時間分並べたデータ構造と、
@@ -297,19 +297,6 @@ void use_loop_blocking_test_for_sample_interleaving()
     array2d<std::int16_t> d(kSize, 2); // wavfile
     array2d<float> e(2, kSize); // プログラム上で持ちたい形式
     int sum;
-
-    std::cout << "Don't use loop blocking" << std::endl;
-    {
-        sum = 0;
-        Timer t;
-        for (int smp = 0; smp < kSize; smp++) {
-            for (int ch = 0; ch < 2; ch++) {
-                e[ch][smp] = d[smp][ch] / 32768.0;
-                sum += e[ch][smp];
-            }
-        }
-        dump(t.elapsed());
-    }
 
     std::cout << "Estimate preferable blocking size for sample interleaving." << std::endl;
     {
@@ -344,6 +331,19 @@ void use_loop_blocking_test_for_sample_interleaving()
         std::cout << std::endl;
         std::cout << "fastest block size: " << fastest_block_size << std::endl;
         dump(fastest_block_time);
+    }
+
+    std::cout << "Don't use loop blocking" << std::endl;
+    {
+        sum = 0;
+        Timer t;
+        for (int smp = 0; smp < kSize; smp++) {
+            for (int ch = 0; ch < 2; ch++) {
+                e[ch][smp] = d[smp][ch] / 32768.0;
+                sum += e[ch][smp];
+            }
+        }
+        dump(t.elapsed());
     }
 }
 
