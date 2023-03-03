@@ -211,6 +211,25 @@ void use_loop_blocking_test()
         }
     }
 
+    std::cout << "Don't use loop blocking" << std::endl;
+    {
+        Timer t;
+        for(int i = 0; i < kSize; ++i) {
+            for(int j = 0; j < kSize; ++j) {
+                c[i][j] = 0;
+            }
+        }
+
+        for (int i = 0; i < kSize; i++) {
+            for (int j = 0; j < kSize; j++) {
+                for (int k = 0; k < kSize; ++k) {
+                    c[i][j] += a[i][k] * b[k][j];
+                }
+            }
+        }
+        dump(t.elapsed());
+    }
+
     std::cout << "Use loop blocking" << std::endl;
     {
         int fastest_block_size = 1000000;
@@ -262,25 +281,6 @@ void use_loop_blocking_test()
         std::cout << "fastest block size: " << fastest_block_size << std::endl;
         dump(fastest_block_time);
     }
-
-    std::cout << "Don't use loop blocking" << std::endl;
-    {
-        Timer t;
-        for(int i = 0; i < kSize; ++i) {
-            for(int j = 0; j < kSize; ++j) {
-                c[i][j] = 0;
-            }
-        }
-
-        for (int i = 0; i < kSize; i++) {
-            for (int j = 0; j < kSize; j++) {
-                for (int k = 0; k < kSize; ++k) {
-                    c[i][j] += a[i][k] * b[k][j];
-                }
-            }
-        }
-        dump(t.elapsed());
-    }
 }
 
 // wavファイルのデータ形式のように、1サンプルデータをチャンネル数で並べ、それをサンプル時間分並べたデータ構造と、
@@ -298,6 +298,19 @@ void use_loop_blocking_test_for_sample_interleaving()
     array2d<std::int16_t> d(kSize, 2); // wavfile
     array2d<float> e(2, kSize); // プログラム上で持ちたい形式
     int sum;
+
+    std::cout << "Don't use loop blocking" << std::endl;
+    {
+        sum = 0;
+        Timer t;
+        for (int smp = 0; smp < kSize; smp++) {
+            for (int ch = 0; ch < 2; ch++) {
+                e[ch][smp] = d[smp][ch] / 32768.0;
+                sum += e[ch][smp];
+            }
+        }
+        dump(t.elapsed());
+    }
 
     std::cout << "Estimate preferable blocking size for sample interleaving." << std::endl;
     {
@@ -334,18 +347,6 @@ void use_loop_blocking_test_for_sample_interleaving()
         dump(fastest_block_time);
     }
 
-    std::cout << "Don't use loop blocking" << std::endl;
-    {
-        sum = 0;
-        Timer t;
-        for (int smp = 0; smp < kSize; smp++) {
-            for (int ch = 0; ch < 2; ch++) {
-                e[ch][smp] = d[smp][ch] / 32768.0;
-                sum += e[ch][smp];
-            }
-        }
-        dump(t.elapsed());
-    }
 }
 
 namespace cache_thrashing_test_data {
